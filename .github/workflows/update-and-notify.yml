@@ -1,0 +1,68 @@
+name: Update link.json and notify Google Apps Script
+
+on:
+  push:
+    branches: [ main, master, '**' ]
+
+permissions:
+  contents: write
+
+jobs:
+  update-link-and-post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set variables
+        id: vars
+        run: |
+          echo "REPO_URL=https://github.com/${GITHUB_REPOSITORY}" >> $GITHUB_ENV
+          echo "GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbw2ycTrj5Q3w8S6EH7syGwuzu1hP-C9MZkJX2uLKuk/dev" >> $GITHUB_ENV
+
+      - name: Update public/link.json if changed
+        run: |
+          FILE=public/link.json
+          mkdir -p public
+          cat > $FILE <<EOF
+          {
+            "repo": "${REPO_URL}"
+          }
+          EOF
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git status --porcelain | grep -q public/link.json; then
+            git add $FILE
+            git commit -m "ci: update link.json -> ${REPO_URL}" || echo "no commit"
+            git push origin HEAD:${GITHUB_REF#refs/heads/}
+          else
+            echo "No changes to commit."
+          fi
+
+      - name: Notify Google Apps Script (POST repo URL)
+        env:
+          GAS_ENDPOINT: ${{ env.GAS_ENDPOINT }}
+          REPO_URL: ${{ env.REPO_URL }}
+        run: |
+          # POST JSON to the Apps Script URL provided by user
+          # The Apps Script endpoint should accept POST with JSON: {"repo":"<url>"}
+          echo "Posting new repo URL to Google Apps Script endpoint..."
+          http_code=$(curl -s -o /tmp/resp.txt -w "%{http_code}" -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"repo\":\"${REPO_URL}\"}" \
+            "${GAS_ENDPOINT}")
+
+          echo "HTTP_CODE=$http_code"
+          echo "Response body:"
+          cat /tmp/resp.txt
+
+          if [[ "$http_code" -ge 200 && "$http_code" -lt 300 ]]; then
+            echo "Apps Script notified successfully."
+          else
+            echo "Warning: POST to Apps Script returned HTTP $http_code" >&2
+            # do not fail job to avoid blocking pushes; remove this line if you want failure instead
+          fi
