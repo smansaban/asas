@@ -5,6 +5,7 @@
   ],
   "routes": [
     { "handle": "filesystem" },
+    { "src": "/link.json", "dest": "/public/link.json" },
     { "src": "/", "dest": "/public/index.html" }
   ]
 }
