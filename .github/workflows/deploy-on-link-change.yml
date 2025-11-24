@@ -1,0 +1,28 @@
+name: Trigger Vercel Deploy on link.json change
+
+on:
+  push:
+    paths:
+      - 'public/link.json'
+
+jobs:
+  trigger-deploy:
+    name: Trigger Vercel Deploy Hook
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vercel Deploy Hook
+        env:
+          VERCEL_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          set -e
+          if [ -z "$VERCEL_HOOK" ]; then
+            echo "Error: GitHub secret VERCEL_DEPLOY_HOOK is not set"
+            exit 1
+          fi
+          echo "Calling Vercel Deploy Hook..."
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$VERCEL_HOOK")
+          echo "Vercel hook HTTP status: $status"
+          if [ "$status" -ge 400 ]; then
+            echo "Vercel hook returned error status"
+            exit 1
+          fi
