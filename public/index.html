@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Repo Link (Vercel)</title>
+    <style>
+      body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding: 32px; max-width: 720px; margin: auto; }
+      .card { padding: 20px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
+      a.repo { word-break: break-all; font-weight:600; font-size:1.05rem; }
+      small { color: #666; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Link Repo (otomatis)</h1>
+      <p id="desc">Memuat link...</p>
+      <p><small>Setiap push ke GitHub akan memperbarui link ini dan mengirim notifikasi ke Google Apps Script Anda.</small></p>
+    </div>
+
+    <script>
+      async function load() {
+        try {
+          const r = await fetch('/link.json', {cache: "no-store"});
+          const j = await r.json();
+          const desc = document.getElementById('desc');
+          if (j && j.repo) {
+            desc.innerHTML = `Repository: <a class="repo" href="${j.repo}" target="_blank" rel="noopener noreferrer">${j.repo}</a>`;
+          } else {
+            desc.textContent = 'Belum ada link repo. Silakan push ke GitHub untuk otomatis mengisinya.';
+          }
+        } catch (e) {
+          document.getElementById('desc').textContent = 'Gagal memuat link: ' + e.message;
+        }
+      }
+      load();
+    </script>
+  </body>
+</html>
