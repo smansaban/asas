@@ -24,3 +24,21 @@ function doPost(e) {
   // simpan payload.repo ke PropertiesService, Spreadsheet, dsb.
   return ContentService.createTextOutput(JSON.stringify({status:"ok", repo: payload.repo})).setMimeType(ContentService.MimeType.JSON);
 }
+
+## Otomatis Deploy ke Vercel saat `public/link.json` berubah
+
+Untuk memastikan Vercel melakukan deploy ulang saat Anda mengubah `public/link.json`, gunakan Vercel Deploy Hook dan GitHub Actions:
+
+- Di Vercel: buka project → Settings → Git → create "Deploy Hook". Salin URL hook.
+- Di GitHub repo: buka Settings → Secrets and variables → Actions → New repository secret. Buat secret `VERCEL_DEPLOY_HOOK` berisi URL hook tadi.
+- Workflow yang sudah ditambahkan akan memanggil hook setiap ada push yang mengubah `public/link.json`.
+
+File workflow berada di `.github/workflows/deploy-on-link-change.yml`.
+
+Contoh penggunaan:
+
+1. Edit `public/link.json` lalu push ke `main`.
+2. GitHub Actions mendeteksi perubahan pada path `public/link.json` dan POST ke Deploy Hook.
+3. Vercel menerima POST dan memicu deploy baru, sehingga perubahan file akan langsung terlihat di situs.
+
+Catatan: Deploy Hook harus dibuat pada project Vercel yang terhubung ke repo ini. Jangan menaruh URL hook secara publik — gunakan GitHub Secrets.
